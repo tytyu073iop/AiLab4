@@ -6,30 +6,6 @@ from task1 import DecisionTreeClassifier
 
 
 class RandomForestClassifier:
-    """
-    Random Forest Classifier based on DecisionTreeClassifier from task1.py.
-    
-    Parameters
-    ----------
-    n_estimators : int, default=100
-        Number of trees in the forest.
-    max_depth : int, default=None
-        Maximum depth of each tree.
-    min_samples_split : int, default=2
-        Minimum number of samples required to split a node.
-    min_samples_leaf : int, default=1
-        Minimum number of samples required to be at a leaf node.
-    max_features : str or int or float, default='sqrt'
-        Number of features to consider when looking for the best split:
-        - 'sqrt': sqrt(n_features)
-        - 'log2': log2(n_features)
-        - int: exact number
-        - float: fraction of n_features
-    bootstrap : bool, default=True
-        Whether to use bootstrap samples when building trees.
-    random_state : int, default=None
-        Random seed for reproducibility.
-    """
     
     def __init__(
         self,
@@ -37,16 +13,14 @@ class RandomForestClassifier:
         max_depth: Optional[int] = None,
         min_samples_split: int = 2,
         min_samples_leaf: int = 1,
-        max_features: Union[str, int, float] = 'sqrt',
-        bootstrap: bool = True,
         random_state: Optional[int] = None
     ):
         self.n_estimators = n_estimators
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
         self.min_samples_leaf = min_samples_leaf
-        self.max_features = max_features
-        self.bootstrap = bootstrap
+        self.max_features = 'sqrt'
+        self.bootstrap = True
         self.random_state = random_state
         
         self.estimators_ = []
@@ -58,21 +32,6 @@ class RandomForestClassifier:
             np.random.seed(random_state)
     
     def fit(self, X: Union[pd.DataFrame, np.ndarray], y: Union[pd.Series, np.ndarray]) -> 'RandomForestClassifier':
-        """
-        Build a forest of trees from the training set (X, y).
-        
-        Parameters
-        ----------
-        X : array-like of shape (n_samples, n_features)
-            Training input samples.
-        y : array-like of shape (n_samples,)
-            Target values (class labels).
-            
-        Returns
-        -------
-        self : RandomForestClassifier
-            Fitted estimator.
-        """
         # Convert to pandas for consistency with DecisionTreeClassifier
         if not isinstance(X, pd.DataFrame):
             X = pd.DataFrame(X)
@@ -83,34 +42,16 @@ class RandomForestClassifier:
         self.n_features_ = n_features
         self.classes_ = np.unique(y)
         
-        # Determine number of features to consider for each split
-        self._validate_max_features()
-        
         # Build trees
         self.estimators_ = []
         self.feature_indices_ = []
         
         for i in range(self.n_estimators):
-            # Bootstrap sampling
-            if self.bootstrap:
-                indices = np.random.choice(n_samples, size=n_samples, replace=True)
-                X_boot = X.iloc[indices].reset_index(drop=True)
-                y_boot = y.iloc[indices].reset_index(drop=True)
-            else:
-                X_boot = X.copy()
-                y_boot = y.copy()
+            indices = np.random.choice(n_samples, size=n_samples, replace=True)
+            X_boot = X.iloc[indices].reset_index(drop=True)
+            y_boot = y.iloc[indices].reset_index(drop=True)
             
-            # Random feature selection for this tree
-            if isinstance(self.max_features, int):
-                n_features_tree = self.max_features
-            elif isinstance(self.max_features, float):
-                n_features_tree = int(self.max_features * n_features)
-            elif self.max_features == 'sqrt':
-                n_features_tree = int(np.sqrt(n_features))
-            elif self.max_features == 'log2':
-                n_features_tree = int(np.log2(n_features))
-            else:
-                n_features_tree = n_features  # fallback
+            n_features_tree = int(np.sqrt(n_features))
             
             n_features_tree = max(1, min(n_features_tree, n_features))
             feature_idx = np.random.choice(n_features, size=n_features_tree, replace=False)
@@ -131,56 +72,13 @@ class RandomForestClassifier:
         
         return self
     
-    def _validate_max_features(self):
-        """Validate max_features parameter."""
-        n_features = self.n_features_
-        if isinstance(self.max_features, str):
-            if self.max_features not in ('sqrt', 'log2'):
-                raise ValueError(f"Invalid value for max_features: {self.max_features}. "
-                                 "Allowed string values are 'sqrt' or 'log2'.")
-        elif isinstance(self.max_features, (int, float)):
-            if self.max_features <= 0:
-                raise ValueError("max_features must be > 0")
-            if isinstance(self.max_features, int) and self.max_features > n_features:
-                raise ValueError("max_features cannot be greater than n_features")
-            if isinstance(self.max_features, float) and self.max_features > 1.0:
-                raise ValueError("max_features cannot be > 1.0 when float")
-        else:
-            raise TypeError("max_features must be str, int or float")
-    
     def predict(self, X: Union[pd.DataFrame, np.ndarray]) -> np.ndarray:
-        """
-        Predict class for X.
-        
-        Parameters
-        ----------
-        X : array-like of shape (n_samples, n_features)
-            Input samples.
-            
-        Returns
-        -------
-        y_pred : ndarray of shape (n_samples,)
-            Predicted class labels.
-        """
-        proba = self.predict_proba(X)
+        proba = self.predict_with_probability(X)
         # Choose class with highest probability
         class_idx = np.argmax(proba, axis=1)
         return self.classes_[class_idx]
     
-    def predict_proba(self, X: Union[pd.DataFrame, np.ndarray]) -> np.ndarray:
-        """
-        Predict class probabilities for X.
-        
-        Parameters
-        ----------
-        X : array-like of shape (n_samples, n_features)
-            Input samples.
-            
-        Returns
-        -------
-        proba : ndarray of shape (n_samples, n_classes)
-            Class probabilities of the input samples.
-        """
+    def predict_with_probability(self, X: Union[pd.DataFrame, np.ndarray]) -> np.ndarray:
         if not isinstance(X, pd.DataFrame):
             X = pd.DataFrame(X)
         
@@ -204,28 +102,10 @@ class RandomForestClassifier:
         return proba
     
     def score(self, X: Union[pd.DataFrame, np.ndarray], y: Union[pd.Series, np.ndarray]) -> float:
-        """
-        Return the mean accuracy on the given test data and labels.
-        
-        Parameters
-        ----------
-        X : array-like of shape (n_samples, n_features)
-            Test samples.
-        y : array-like of shape (n_samples,)
-            True labels for X.
-            
-        Returns
-        -------
-        score : float
-            Mean accuracy of self.predict(X) wrt. y.
-        """
         y_pred = self.predict(X)
         return np.mean(y_pred == y)
 
 
-# ----------------------------------------------------------------------
-# Обучение и оценка случайного леса на датасете Mushroom
-# ----------------------------------------------------------------------
 if __name__ == "__main__":
     from ucimlrepo import fetch_ucirepo
     from sklearn.model_selection import train_test_split
@@ -333,7 +213,7 @@ if __name__ == "__main__":
     print("\n7. Визуализация уверенности модели в ответах...")
     
     # Получаем вероятности для тестовой выборки
-    proba = rf.predict_proba(X_test)
+    proba = rf.predict_with_probability(X_test)
     # Уверенность = максимальная вероятность среди классов
     confidence = np.max(proba, axis=1)
     

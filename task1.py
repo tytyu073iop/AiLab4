@@ -360,31 +360,3 @@ if __name__ == "__main__":
     if clf.tree_ is not None:
         depth = max_depth(clf.tree_)
         print(f"\n7. Глубина дерева: {depth}")
-    
-    # Сравнение с sklearn (опционально)
-    try:
-        from sklearn.tree import DecisionTreeClassifier as SklearnDecisionTreeClassifier
-        from sklearn.preprocessing import LabelEncoder
-        
-        print("\n8. Сравнение с sklearn.tree.DecisionTreeClassifier (для справки):")
-        # Кодирование категориальных признаков в числовые (sklearn требует числовые)
-        X_train_encoded = X_train.apply(LabelEncoder().fit_transform)
-        X_test_encoded = X_test.apply(LabelEncoder().fit_transform)
-        y_train_encoded = LabelEncoder().fit_transform(y_train)
-        y_test_encoded = LabelEncoder().fit_transform(y_test)
-        
-        sk_clf = SklearnDecisionTreeClassifier(
-            criterion='gini',
-            max_depth=5,
-            min_samples_split=10,
-            min_samples_leaf=5,
-            random_state=42
-        )
-        sk_clf.fit(X_train_encoded, y_train_encoded)
-        sk_test_pred = sk_clf.predict(X_test_encoded)
-        sk_acc = accuracy_score(y_test_encoded, sk_test_pred)
-        print(f"   Accuracy sklearn: {sk_acc:.4f}")
-        print(f"   Accuracy нашей реализации: {test_acc:.4f}")
-        print(f"   Разница: {abs(sk_acc - test_acc):.4f}")
-    except ImportError:
-        print("\n8. sklearn не установлен, сравнение пропущено.")

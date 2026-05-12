@@ -5,62 +5,18 @@ from typing import Optional, Union, List, Tuple
 
 
 class DecisionTreeClassifier:
-    """
-    Решающее дерево классификации для категориальных признаков.
-    
-    Параметры:
-    ----------
-    criterion : {'gini', 'entropy'}, по умолчанию 'gini'
-        Функция для измерения качества разбиения.
-        - 'gini': индекс Джини (мера неоднородности)
-        - 'entropy': информационная энтропия
-        Выбор обоснован: индекс Джини менее вычислительно затратен и дает аналогичные
-        результаты для классификации. Энтропия более чувствительна к изменениям
-        распределения, но в практике разница незначительна.
-    
-    max_depth : int, по умолчанию None
-        Максимальная глубина дерева. Ограничивает сложность модели и предотвращает переобучение.
-    
-    min_samples_split : int, по умолчанию 2
-        Минимальное количество образцов, необходимых для разделения внутреннего узла.
-    
-    min_samples_leaf : int, по умолчанию 1
-        Минимальное количество образцов, которые должны находиться в листовом узле.
-    
-    missing_value_strategy : {'separate_category', 'most_frequent'}, по умолчанию 'separate_category'
-        Стратегия обработки пропущенных значений:
-        - 'separate_category': рассматривать пропуски как отдельную категорию.
-        - 'most_frequent': заполнить пропуски наиболее частой категорией признака.
-        Выбор обоснован: для категориальных признаков пропуски могут нести информацию,
-        поэтому отдельная категория часто предпочтительнее.
-    
-    random_state : int, по умолчанию None
-        Seed для генератора случайных чисел (для разрешения ничьих).
-    
-    Атрибуты:
-    ----------
-    tree_ : dict
-        Структура дерева.
-    n_features_ : int
-        Количество признаков, увиденных при обучении.
-    classes_ : ndarray
-        Уникальные метки классов.
-    """
     
     def __init__(
         self,
-        criterion: str = 'gini',
         max_depth: Optional[int] = None,
         min_samples_split: int = 2,
         min_samples_leaf: int = 1,
-        missing_value_strategy: str = 'separate_category',
         random_state: Optional[int] = None
     ):
-        self.criterion = criterion
+        self.criterion = 'gini'
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
         self.min_samples_leaf = min_samples_leaf
-        self.missing_value_strategy = missing_value_strategy
         self.random_state = random_state
         
         self.tree_ = None
@@ -70,22 +26,7 @@ class DecisionTreeClassifier:
         if random_state is not None:
             np.random.seed(random_state)
     
-    def fit(self, X: Union[pd.DataFrame, np.ndarray], y: Union[pd.Series, np.ndarray]) -> 'DecisionTreeClassifier':
-        """
-        Построение дерева классификации по обучающей выборке (X, y).
-        
-        Параметры:
-        ----------
-        X : array-like формы (n_samples, n_features)
-            Обучающие входные данные.
-        y : array-like формы (n_samples,)
-            Целевые значения.
-        
-        Возвращает:
-        ----------
-        self : DecisionTreeClassifier
-            Обученный классификатор.
-        """
+    def learn(self, X: Union[pd.DataFrame, np.ndarray], y: Union[pd.Series, np.ndarray]) -> 'DecisionTreeClassifier':
         # Преобразование в pandas DataFrame/Series для удобства обработки пропусков
         if not isinstance(X, pd.DataFrame):
             X = pd.DataFrame(X)
@@ -134,24 +75,11 @@ class DecisionTreeClassifier:
         return np.array(predictions)
     
     def _preprocess_missing(self, X: pd.DataFrame) -> pd.DataFrame:
-        """
-        Обработка пропущенных значений согласно выбранной стратегии.
-        Возвращает копию X с обработанными пропусками.
-        """
         X_copy = X.copy()
-        
-        if self.missing_value_strategy == 'separate_category':
-            # Замена NaN на специальный маркер
-            for col in X_copy.columns:
-                if X_copy[col].isnull().any():
-                    X_copy[col] = X_copy[col].fillna('__MISSING__')
-        elif self.missing_value_strategy == 'most_frequent':
-            for col in X_copy.columns:
-                if X_copy[col].isnull().any():
-                    most_freq = X_copy[col].mode()[0]
-                    X_copy[col] = X_copy[col].fillna(most_freq)
-        else:
-            raise ValueError(f"Неизвестная стратегия обработки пропусков: {self.missing_value_strategy}")
+        # Замена NaN на специальный маркер
+        for col in X_copy.columns:
+            if X_copy[col].isnull().any():
+                X_copy[col] = X_copy[col].fillna('__MISSING__')
         
         return X_copy
     
@@ -369,38 +297,19 @@ if __name__ == "__main__":
     print(f"   Обучающая выборка: {X_train.shape[0]} образцов")
     print(f"   Тестовая выборка:  {X_test.shape[0]} образцов")
     
-    # Обучение дерева
-    print("\n3. Обучение решающего дерева с параметрами:")
-    print("   - criterion: gini")
-    print("   - max_depth: 5")
-    print("   - min_samples_split: 10")
-    print("   - min_samples_leaf: 5")
-    print("   - missing_value_strategy: separate_category")
-    print("   - random_state: 42")
-    
     clf = DecisionTreeClassifier(
-        criterion='gini',
         max_depth=5,
         min_samples_split=10,
         min_samples_leaf=5,
-        missing_value_strategy='separate_category',
         random_state=42
     )
-    clf.fit(X_train, y_train)
+    clf.learn(X_train, y_train)
     print("   Обучение завершено.")
     
     # Предсказания
     y_train_pred = clf.predict(X_train)
     y_test_pred = clf.predict(X_test)
-    
-    # Метрики качества
-    print("\n4. Оценка качества классификации:")
-    print("\n   Обоснование выбора метрик:")
-    print("   - Accuracy (точность): доля верно классифицированных образцов.")
-    print("   - Precision (точность): доля верно предсказанных съедобных грибов среди всех предсказанных съедобных.")
-    print("   - Recall (полнота): доль верно предсказанных съедобных грибов среди всех действительно съедобных.")
-    print("   - F1-score: гармоническое среднее precision и recall.")
-    print("   - Confusion matrix: наглядное представление ошибок классификации.")
+    print("   Предсказания сделаны.")
     
     def print_metrics(y_true, y_pred, set_name):
         acc = accuracy_score(y_true, y_pred)
@@ -426,10 +335,6 @@ if __name__ == "__main__":
     # Анализ переобучения
     print("\n5. Анализ переобучения:")
     print(f"   Разница accuracy (train - test): {train_acc - test_acc:.4f}")
-    if train_acc - test_acc > 0.05:
-        print("   Внимание: возможное переобучение (разница > 5%).")
-    else:
-        print("   Переобучение незначительное.")
     
     # Важность признаков
     print("\n6. Важность признаков (количество использований в разбиениях):")
@@ -483,17 +388,3 @@ if __name__ == "__main__":
         print(f"   Разница: {abs(sk_acc - test_acc):.4f}")
     except ImportError:
         print("\n8. sklearn не установлен, сравнение пропущено.")
-    
-    print("\n" + "=" * 60)
-    print("ВЫВОДЫ:")
-    print("=" * 60)
-    print("1. Реализован алгоритм решающего дерева классификации с поддержкой:")
-    print("   - Категориальных признаков")
-    print("   - Пропущенных значений (стратегия 'separate_category')")
-    print("   - Критериев Джини и энтропии")
-    print("   - Стандартного интерфейса fit/predict")
-    print("2. Дерево успешно обучено на датасете Mushroom с высокой точностью (>99%).")
-    print("3. Модель корректно обрабатывает пропуски в признаке 'stalk-root'.")
-    print("4. Выбранные метрики качества демонстрируют эффективность классификации.")
-    print("5. Глубина дерева ограничена 5 уровнями для предотвращения переобучения.")
-    print("=" * 60)

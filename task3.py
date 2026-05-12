@@ -6,29 +6,14 @@ from task1 import DecisionTreeClassifier
 
 
 class AdaBoostClassifier:
-    """
-    AdaBoost (Adaptive Boosting) classifier for binary classification.
-    Uses DecisionTreeClassifier with max_depth=1 as weak learner.
-    
-    Parameters
-    ----------
-    n_estimators : int, default=50
-        Number of weak learners to train.
-    learning_rate : float, default=1.0
-        Shrinks the contribution of each weak learner.
-    random_state : int, default=None
-        Random seed for reproducibility.
-    """
     
     def __init__(
         self,
         n_estimators: int = 50,
-        learning_rate: float = 1.0,
         weak_learner_depth: int = 3,
         random_state: Optional[int] = None
     ):
         self.n_estimators = n_estimators
-        self.learning_rate = learning_rate
         self.weak_learner_depth = weak_learner_depth
         self.random_state = random_state
         
@@ -41,21 +26,6 @@ class AdaBoostClassifier:
             np.random.seed(random_state)
     
     def fit(self, X: Union[pd.DataFrame, np.ndarray], y: Union[pd.Series, np.ndarray]) -> 'AdaBoostClassifier':
-        """
-        Build an AdaBoost classifier from the training set (X, y).
-        
-        Parameters
-        ----------
-        X : array-like of shape (n_samples, n_features)
-            Training input samples.
-        y : array-like of shape (n_samples,)
-            Target values (class labels). Must be binary.
-            
-        Returns
-        -------
-        self : AdaBoostClassifier
-            Fitted estimator.
-        """
         # Convert to pandas
         if not isinstance(X, pd.DataFrame):
             X = pd.DataFrame(X)
@@ -65,8 +35,6 @@ class AdaBoostClassifier:
         # Check binary classification
         self.classes_ = np.unique(y)
         self.n_classes_ = len(self.classes_)
-        if self.n_classes_ != 2:
-            raise ValueError("AdaBoostClassifier only supports binary classification.")
         
         # Map classes to +1 and -1 (inverted sign to match weak learner predictions)
         self.class_map_ = {self.classes_[0]: -1, self.classes_[1]: 1}
@@ -119,7 +87,7 @@ class AdaBoostClassifier:
                 break
             
             # Compute learner weight
-            alpha = self.learning_rate * 0.5 * np.log((1 - error) / error)
+            alpha = 0.5 * np.log((1 - error) / error)
             
             # Update sample weights
             sample_weights *= np.exp(-alpha * y_mapped * y_pred_mapped)
@@ -132,19 +100,6 @@ class AdaBoostClassifier:
         return self
     
     def predict(self, X: Union[pd.DataFrame, np.ndarray]) -> np.ndarray:
-        """
-        Predict class for X.
-        
-        Parameters
-        ----------
-        X : array-like of shape (n_samples, n_features)
-            Input samples.
-            
-        Returns
-        -------
-        y_pred : ndarray of shape (n_samples,)
-            Predicted class labels.
-        """
         # Compute weighted sum of weak learner predictions
         score = self.decision_function(X)
         # Convert score to class labels
@@ -152,19 +107,6 @@ class AdaBoostClassifier:
         return self.classes_[pred_class_idx]
     
     def decision_function(self, X: Union[pd.DataFrame, np.ndarray]) -> np.ndarray:
-        """
-        Compute the weighted sum of weak learner predictions.
-        
-        Parameters
-        ----------
-        X : array-like of shape (n_samples, n_features)
-            Input samples.
-            
-        Returns
-        -------
-        score : ndarray of shape (n_samples,)
-            Weighted sum of predictions (+1/-1).
-        """
         if not isinstance(X, pd.DataFrame):
             X = pd.DataFrame(X)
         
@@ -294,7 +236,6 @@ if __name__ == "__main__":
     print("\n5. Обучение AdaBoost (n_estimators=50, weak learner: stump)...")
     ada = AdaBoostClassifier(
         n_estimators=50,
-        learning_rate=1.0,
         random_state=42
     )
     ada.fit(X_train, y_train)
@@ -321,7 +262,6 @@ if __name__ == "__main__":
     for n in n_estimators_range:
         ada_temp = AdaBoostClassifier(
             n_estimators=n,
-            learning_rate=1.0,
             weak_learner_depth=3,
             random_state=42
         )

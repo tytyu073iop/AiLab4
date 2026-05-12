@@ -339,8 +339,8 @@ if __name__ == "__main__":
     plt.grid(True, linestyle='--', alpha=0.7)
     plt.legend()
     plt.tight_layout()
-    plt.savefig('accuracy_vs_n_estimators_adaboost.png', dpi=150)
-    print("   График сохранён как 'accuracy_vs_n_estimators_adaboost.png'")
+    plt.savefig('task3_1.png', dpi=150)
+    print("   График сохранен как 'task3_1.png'")
     
     # ------------------------------------------------------------------
     # 8. Объяснение графика

@@ -157,8 +157,6 @@ if __name__ == "__main__":
         max_depth=5,
         min_samples_split=10,
         min_samples_leaf=5,
-        max_features='sqrt',
-        bootstrap=True,
         random_state=42
     )
     rf.fit(X_train, y_train)
@@ -186,8 +184,6 @@ if __name__ == "__main__":
             max_depth=5,
             min_samples_split=10,
             min_samples_leaf=5,
-            max_features='sqrt',
-            bootstrap=True,
             random_state=42
         )
         rf_temp.fit(X_train, y_train)
@@ -204,8 +200,8 @@ if __name__ == "__main__":
     plt.grid(True, linestyle='--', alpha=0.7)
     plt.legend()
     plt.tight_layout()
-    plt.savefig('accuracy_vs_n_trees.png', dpi=150)
-    print("   График сохранён как 'accuracy_vs_n_trees.png'")
+    plt.savefig('task2_1.png', dpi=150)
+    print("   График сохранён как 'task2_1.png'")
     
     # ------------------------------------------------------------------
     # 7. Визуализация уверенности модели в ответах
@@ -241,8 +237,8 @@ if __name__ == "__main__":
     plt.grid(True, linestyle='--', alpha=0.5)
     
     plt.tight_layout()
-    plt.savefig('confidence_histograms.png', dpi=150)
-    print("   Гистограммы сохранены как 'confidence_histograms.png'")
+    plt.savefig('task2_2.png', dpi=150)
+    print("   Гистограммы сохранены как 'task2_2.png'")
     
     # ------------------------------------------------------------------
     # 8. Дополнительная информация
